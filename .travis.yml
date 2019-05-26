@@ -1,0 +1,23 @@
+# Config file for automatic testing at travis-ci.org
+dist: xenial
+language: python
+matrix:
+  include:
+    - python: 3.6
+      env: TOXENV=test36
+    - python: 3.7
+      env: TOXENV=test37
+    - python: 3.7
+      env: TOXENV=run-blackcheck
+    - python: 3.7
+      env: TOXENV=run-isortcheck
+install:
+  # any failure stops the build
+  - set -e
+  - hash -r
+  - pip install tox
+  - pip freeze
+script:
+  - tox
+after_success:
+  - if [[ $TOXENV == 'test37' ]]; coveralls; fi

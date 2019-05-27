@@ -53,7 +53,7 @@ setup(
     author="Michael Goerz",
     author_email='mail@michaelgoerz.net',
     classifiers=[
-        'Development Status :: 1 - Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',

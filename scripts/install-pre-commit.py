@@ -11,3 +11,4 @@ if os.path.isdir(".git") and not os.path.isfile(".git/hooks/pre-commit"):
     print("Installing pre-commit hooks")
     print("##################################################################")
     os.system("tox -e run-cmd -- pre-commit install")
+    print("Finished installation of pre-commit hooks")

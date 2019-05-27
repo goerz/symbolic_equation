@@ -4,9 +4,9 @@ language: python
 matrix:
   include:
     - python: 3.6
-      env: TOXENV=test36
+      env: TOXENV=py36-test
     - python: 3.7
-      env: TOXENV=test37
+      env: TOXENV=py37-test
     - python: 3.7
       env: TOXENV=run-blackcheck
     - python: 3.7

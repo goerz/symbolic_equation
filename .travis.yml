@@ -15,9 +15,9 @@ install:
   # any failure stops the build
   - set -e
   - hash -r
-  - pip install tox
+  - pip install tox coveralls
   - pip freeze
 script:
-  - tox
+  - tox -e $TOXENV
 after_success:
-  - if [[ $TOXENV == 'test37' ]]; coveralls; fi
+  - if [[ $TOXENV == 'test37' ]]; then coveralls; fi

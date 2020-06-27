@@ -65,7 +65,7 @@ black-check: ## Check all src and test files for complience to "black" code styl
 	tox -e run-blackcheck
 
 black: ## Apply 'black' code style to all src and test files
-	tox -e run-blackcheck
+	tox -e run-black
 
 isort-check: ## Check all src and test files for correctly sorted imports
 	tox -e run-isortcheck

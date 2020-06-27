@@ -23,10 +23,12 @@ equations.
 
 The ``Eq`` class defines an equation, and allows to apply arbitrary
 manipulations to the left-hand-side and/or right-hand-side of that equation. It
-optionally keeps track all of these manipulations, and displays them neatly as a
+keeps track all of these manipulations, and displays them neatly as a
 multi-line equation in an interactive interpreter session or a `Jupyter
 notebook`_ (using a LaTeX representation). It is mainly intended for use with
 SymPy_.
+
+Long calculations are expressed via method chaining, using ``.apply`` (apply function or method to both sides the equation), ``.apply_to_lhs``, ``.apply_to_rhs`` (apply function or method only on the left hand side, respectively the right hand side), and ``.transform`` (apply function to the equation as a whole). For concise output, multiple steps in a calculation can be grouped with ``.amend`` and ``.reset``. Tags (equation numbers or labels) set with ``.tag`` on any line of the equation will render in the text and LaTeX output.
 
 Development of the ``symbolic_equation`` package happens on `Github`_.
 
@@ -69,9 +71,9 @@ Example
     x + y - 5 = 0    ('II')
 
     >>> eq_y = (
-    ...     (eq1 - 2 * eq2).set_tag("I - 2 II")
-    ...     .apply(lambda v: v - 9, cont=True)
-    ...     .apply(lambda v: v / (-3), cont=True, tag='y')
+    ...     (eq1 - 2 * eq2).tag("I - 2 II")
+    ...     .transform(lambda eq: eq - 9)
+    ...     .transform(lambda eq: eq / (-3)).tag('y')
     ... )
     >>> eq_y
     9 - 3*y = 0     ('I - 2 II')
@@ -79,26 +81,34 @@ Example
           y = 3     ('y')
 
     >>> eq_x = (
-    ...     eq1.apply_mtd_to_lhs('subs', eq_y.as_dict, tag=r'y in I')
-    ...     .apply(lambda v: v / 2, cont=True)
-    ...     .apply(lambda v: v + 2, cont=True, tag='x')
+    ...     eq1.apply_to_lhs('subs', eq_y.as_dict).reset().tag(r'y in I')
+    ...     .transform(lambda eq: eq / 2)
+    ...     .transform(lambda eq: eq + 2).tag('x')
     ... )
     >>> eq_x
     2*x - 4 = 0    ('y in I')
       x - 2 = 0
           x = 2    ('x')
 
+The ``reset()`` in the first line excludes ``('I')`` from the output.
+It is also possible to "group" lines using ``amend``, for less verbose output:
+
+    >>> eq_x = (
+    ...     eq1.apply_to_lhs('subs', eq_y.as_dict).reset().tag(r'y in I')
+    ...     .transform(lambda eq: eq / 2)
+    ...     .transform(lambda eq: eq + 2).amend().tag('x')
+    ... )
+    >>> eq_x
+    2*x - 4 = 0    ('y in I')
+          x = 2    ('x')
+
+
 Reference
 ---------
 
 .. code-block:: pycon
 
-   >>> help(Eq)  # doctest: +NORMALIZE_WHITESPACE
-   Help on class Eq in module symbolic_equation:
-   <BLANKLINE>
    class Eq(builtins.object)
-    |  Eq(lhs, rhs=None, tag=None, _prev_lhs=None, _prev_rhs=None, _prev_tags=None)
-    |
     |  Symbolic equation.
     |
     |  This class keeps track of the :attr:`lhs` and :attr:`rhs` of an equation
@@ -148,55 +158,61 @@ Reference
     |
     |  __truediv__(self, other)
     |
-    |  apply(self, func, *args, cont=False, tag=None, **kwargs)
-    |      Apply `func` to both sides of the equation.
+    |  amend(self, previous_lines=1)
+    |      Amend the previous lhs and rhs with the current ones.
+    |
+    |      If `previous_lines` is greater than 1, overwrite the corresponding
+    |      number of previous lines.
+    |
+    |      This can be chained to e.g. an :meth:`apply` call to group multiple
+    |      steps so that they don't show up a separate lines in the output.
+    |
+    |  apply(self, func_or_mtd, *args, **kwargs)
+    |      Apply `func_or_mtd` to both sides of the equation.
     |
     |      Returns a new equation where the left-hand-side and right-hand side
-    |      are replaced by the application of `func`::
+    |      are replaced by the application of `func_or_mtd`, depending on its
+    |      type.
     |
-    |          lhs=func(lhs, *args, **kwargs)
-    |          rhs=func(rhs, *args, **kwargs)
+    |      * If `func_or_mtd` is a string, it must be the name of a method `mtd`,
+    |        and equation is modified as
     |
-    |      If ``cont=True``, the resulting equation will keep a history of its
-    |      previous state (resulting in multiple lines of equations when printed).
+    |        ::
     |
-    |      The resulting equation with have the given `tag`.
+    |            lhs=lhs.mtd(*args, **kwargs)
+    |            rhs=rhs.mtd(*args, **kwargs)
     |
-    |  apply_mtd(self, mtd, *args, cont=False, tag=None, **kwargs)
-    |      Call the method `mtd` on both sides of the equation.
+    |      * If `func_or_mtd` is a callable `func`, the equation is modified as
     |
-    |      That is, the left-hand-side and right-hand-side are replaced by::
+    |        ::
     |
-    |          lhs=lhs.<mtd>(*args, **kwargs)
-    |          rhs=rhs.<mtd>(*args, **kwargs)
+    |            lhs=func(lhs, *args, **kwargs)
+    |            rhs=func(rhs, *args, **kwargs)
     |
-    |      The `cont` and `tag` parameters are as in :meth:`apply`.
-    |
-    |  apply_mtd_to_lhs(self, mtd, *args, cont=False, tag=None, **kwargs)
-    |      Call the method `mtd` on the :attr:`lhs` of the equation only.
-    |
-    |      Like :meth:`apply_mtd`, but modifying only the left-hand-side.
-    |
-    |  apply_mtd_to_rhs(self, mtd, *args, cont=False, tag=None, **kwargs)
-    |      Call the method `mtd` on the :attr:`rhs` of the equation.
-    |
-    |      Like :meth:`apply_mtd`, but modifying only the right-hand-side.
-    |
-    |  apply_to_lhs(self, func, *args, cont=False, tag=None, **kwargs)
-    |      Apply `func` to the :attr:`lhs` of the equation only.
+    |  apply_to_lhs(self, func_or_mtd, *args, **kwargs)
+    |      Apply `func_or_mtd` to the :attr:`lhs` of the equation only.
     |
     |      Like :meth:`apply`, but modifying only the left-hand-side.
     |
-    |  apply_to_rhs(self, func, *args, cont=False, tag=None, **kwargs)
-    |      Apply `func` to the :attr:`rhs` of the equation only.
+    |  apply_to_rhs(self, func_or_mtd, *args, **kwargs)
+    |      Apply `func_or_mtd` to the :attr:`rhs` of the equation only.
     |
     |      Like :meth:`apply`, but modifying only the right-hand-side.
     |
     |  copy(self)
-    |      Return a copy of the equation
+    |      Return a copy of the equation, including its history.
     |
-    |  set_tag(self, tag)
-    |      Return a copy of the equation with a new `tag`.
+    |  reset(self)
+    |      Discard the equation history.
+    |
+    |  tag(self, tag)
+    |      Set the tag for the last line in the equation.
+    |
+    |  transform(self, func, *args, **kwargs)
+    |      Apply `func` to the entire equation.
+    |
+    |      The lhs and the rhs of the equation is replaced with the lhs and rhs of
+    |      the equation returned by ``func(self, *args, **kwargs)``.
     |
     |  ----------------------------------------------------------------------
     |  Data descriptors defined here:
@@ -218,17 +234,12 @@ Reference
     |  rhs
     |      The right-hand-side of the equation.
     |
-    |  tag
-    |      A tag (equation number) to be shown when printing the equation, or
-    |      None
-    |
     |  ----------------------------------------------------------------------
     |  Data and other attributes defined here:
     |
     |  __hash__ = None
     |
     |  latex_renderer = None
-   <BLANKLINE>
 
 
 

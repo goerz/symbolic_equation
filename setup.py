@@ -29,6 +29,7 @@ requirements = ['uniseg']
 dev_requirements = [
     'black',
     'coverage',
+    'coveralls',
     'flake8',
     'gitpython',
     'isort',

@@ -15,9 +15,12 @@ install:
   # any failure stops the build
   - set -e
   - hash -r
-  - pip install tox coveralls
+  - pip install tox
   - pip freeze
 script:
   - tox -e $TOXENV
 after_success:
-  - if [[ $TOXENV == 'test37' ]]; then coveralls; fi
+  # coveralls is prone to random failures (which would fail the Travis job), so we'll handle those silently
+  - if [[ "${TOXENV}" =~ test ]]; then tox -e $(echo "${TOXENV}" | sed s/test/runcmd/) -- coveralls -v || echo "Cannot upload to coveralls"; fi
+notifications:
+  webhooks: https://coveralls.io/webhook

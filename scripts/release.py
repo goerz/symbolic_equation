@@ -38,7 +38,6 @@ def make_release(package_name):
         click.confirm(
             "Fix errors manually! Continue?", default=True, abort=True
         )
-    check_docs()
     make_release_commit(new_version)
     make_upload(test=True)
     push_release_commit()
@@ -116,8 +115,20 @@ def check_git_clean():
 
 
 def run_tests():
-    """Run 'make test'"""
-    run(['make', 'test'], check=True)
+    """Run 'make test'."""
+    success = False
+    while not success:
+        try:
+            run(['make', 'test'], check=True)
+        except CalledProcessError as exc_info:
+            print("Failed tests: %s\n" % exc_info)
+            print("Fix the tests and ammend the release commit.")
+            print("Then continue.\n")
+            click.confirm("Continue?", default=True, abort=True)
+            if not click.confirm("Retry?", default=True):
+                break
+        else:
+            success = True
 
 
 def split_version(version, base=True):
@@ -279,20 +290,6 @@ def check_dist():
     except CalledProcessError as exc_info:
         click.echo("ERROR: %s" % str(exc_info))
         return False
-
-
-def check_docs():
-    """Verify the documentation (interactively)"""
-    click.echo("Making the documentation....")
-    run(['make', 'docs'], check=True, stdout=DEVNULL)
-    click.echo(
-        "Check documentation in file://"
-        + os.getcwd()
-        + "/docs/_build/html/index.html"
-    )
-    click.confirm(
-        "Does the documentation look correct?", default=True, abort=True
-    )
 
 
 def make_release_commit(version):

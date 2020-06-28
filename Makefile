@@ -86,7 +86,9 @@ upload: clean-build clean-pyc dist ## package and upload a release to pypi.org
 	tox -e run-cmd -- twine upload dist/*
 
 release: ## Create a new version, package and upload it
-	tox -e run-cmd -- python ./scripts/release.py
+	python3.7 -m venv .venv/release
+	.venv/release/bin/python -m pip install click gitpython pytest
+	.venv/release/bin/python ./scripts/release.py
 
 dist: ## builds source and wheel package
 	tox -e run-cmd -- python setup.py sdist

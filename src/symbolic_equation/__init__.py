@@ -2,7 +2,7 @@
 from uniseg.graphemecluster import grapheme_clusters
 
 
-__version__ = '0.2.0'
+__version__ = '0.2.0+dev'
 
 
 __all__ = ['Eq']

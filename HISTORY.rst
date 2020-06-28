@@ -2,8 +2,8 @@
 History
 =======
 
-0.2.0 (next release)
---------------------
+0.2.0 (2020-06-28)
+------------------
 
 * Removed: ``apply_mtd``, ``apply_mtd_to_lhs``, ``apply_mtd_to_rhs`` methods. The functionality is now included in ``apply``, ``apply_to_lhs``, ``apply_to_rhs``, which can now receive a function or a method name
 * Added: ``amend`` and ``reset`` methods for controlling which lines are included in the history of an equation ("grouping")

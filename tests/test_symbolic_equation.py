@@ -11,9 +11,7 @@ from symbolic_equation import Eq
 
 def test_valid_version():
     """Check that the package defines a valid __version__"""
-    assert parse_version(symbolic_equation.__version__) >= parse_version(
-        "0.1.0-dev"
-    )
+    assert parse_version(symbolic_equation.__version__) >= parse_version("0.2")
 
 
 @pytest.fixture
@@ -169,3 +167,58 @@ def test_amend_idempotence(eq1_eq2):
     eq1, _ = eq1_eq2
     assert eq1.amend() == eq1
     assert eq1.amend()._tag == eq1._tag
+
+
+def test_custom_eq_sym():
+    """Test setting the eq_sym."""
+    x, y = symbols('x y')
+
+    assert str(Eq(x, y)) == "x = y"
+    tex = Eq(x, y)._repr_latex_()
+    assert tex == '\\begin{equation}\n  x = y\n\\end{equation}\n'
+
+    # class attribute
+    eq = Eq(x, y)
+    Eq.eq_sym_str = "->"
+    Eq.eq_sym_tex = r"\rightarrow"
+    assert eq.eq_sym_str == "->"
+    assert 'eq_sym_str' not in eq.__dict__  # not an *instance* attribute
+    assert str(eq) == "x -> y"
+    tex = eq._repr_latex_()
+    assert tex == '\\begin{equation}\n  x \\rightarrow y\n\\end{equation}\n'
+    Eq.eq_sym_str = "="
+    Eq.eq_sym_tex = "="
+
+    # unsetting class attribute
+    assert str(eq) == "x = y"
+    tex = eq._repr_latex_()
+    assert tex == '\\begin{equation}\n  x = y\n\\end{equation}\n'
+
+    # instance attribute
+    eq = Eq(x, y)
+    eq.eq_sym_str = "->"
+    eq.eq_sym_tex = r"\rightarrow"
+    assert 'eq_sym_str' in eq.__dict__
+    assert str(eq) == "x -> y"
+    assert str(Eq(x, y)) == "x = y"  # new instances not affected
+    tex = eq._repr_latex_()
+    assert tex == '\\begin{equation}\n  x \\rightarrow y\n\\end{equation}\n'
+
+    # multiline
+    eq = eq.apply_to_rhs('subs', {y: 1}).tag(1)
+    assert 'eq_sym_str' in eq.__dict__
+    assert str(eq) == "x -> y\n  -> 1    (1)"
+    tex = eq._repr_latex_()
+    assert (
+        tex
+        == '\\begin{align}\n  x &= y\\\\\n   &\\rightarrow 1\n\\tag{1}\\end{align}\n'
+    )
+
+    # init argument
+    assert str(Eq(x, y, eq_sym_str="->")) == "x -> y"
+    tex = Eq(x, y, eq_sym_tex=r"\rightarrow")._repr_latex_()
+    assert tex == '\\begin{equation}\n  x \\rightarrow y\n\\end{equation}\n'
+
+    assert str(Eq(x, y)) == "x = y"
+    tex = Eq(x, y)._repr_latex_()
+    assert tex == '\\begin{equation}\n  x = y\n\\end{equation}\n'

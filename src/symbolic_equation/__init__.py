@@ -62,19 +62,32 @@ class Eq:
         rhs: the right-hand-side of the equation. If None, defaults to zero.
         tag: a tag (equation number) to be shown when printing
              the equation
+        eq_sym_str: If given, a value that overrides the `eq_sym_str` class
+            attribute for this particular instance.
+        eq_sym_tex: If given, a value that overrides the `eq_sym_tex` class
+            attribute for this particular instance.
 
     Class Attributes:
         latex_renderer: If not None, a callable that must return a LaTeX
-            representation (:class:`str`) of `lhs` and `rhs`.
+            representation (:class:`str`) of `lhs` and `rhs`. When overriding
+            this, wrap the function with `staticmethod`.
+        eq_sym_str: default representation of the "equal" when rendering the
+            equation as a str
+        eq_sym_tex: default representation of the "equal" when rendering the
+            equation in latex
     """
 
     latex_renderer = None
+    eq_sym_str = "="
+    eq_sym_tex = "="
 
     def __init__(
         self,
         lhs,
         rhs=None,
         tag=None,
+        eq_sym_str=None,
+        eq_sym_tex=None,
         _prev_lhs=None,
         _prev_rhs=None,
         _prev_tags=None,
@@ -95,6 +108,10 @@ class Eq:
             self._tag = int(tag)
         except (ValueError, TypeError):
             self._tag = tag
+        if eq_sym_str is not None:
+            self.eq_sym_str = eq_sym_str
+        if eq_sym_tex is not None:
+            self.eq_sym_tex = eq_sym_tex
 
     @property
     def lhs(self):
@@ -113,10 +130,12 @@ class Eq:
 
     def tag(self, tag):
         """Set the tag for the last line in the equation."""
-        return Eq(
+        return self.__class__(
             self._lhs,
             self._rhs,
             tag=tag,
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
             _prev_lhs=self._prev_lhs,
             _prev_rhs=self._prev_rhs,
             _prev_tags=self._prev_tags,
@@ -205,9 +224,11 @@ class Eq:
         new_prev_rhs.append(self.rhs)
         new_prev_tags = self._prev_tags.copy()
         new_prev_tags.append(self._tag)
-        return Eq(
+        return self.__class__(
             new_lhs,
             new_rhs,
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
             _prev_lhs=new_prev_lhs,
             _prev_rhs=new_prev_rhs,
             _prev_tags=new_prev_tags,
@@ -229,10 +250,12 @@ class Eq:
         new_prev_lhs = self._prev_lhs.copy()[:-previous_lines]
         new_prev_rhs = self._prev_rhs.copy()[:-previous_lines]
         new_prev_tags = self._prev_tags.copy()[:-previous_lines]
-        return Eq(
+        return self.__class__(
             self._lhs,
             self.rhs,
             tag=self._tag,
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
             _prev_lhs=new_prev_lhs,
             _prev_rhs=new_prev_rhs,
             _prev_tags=new_prev_tags,
@@ -240,14 +263,22 @@ class Eq:
 
     def reset(self):
         """Discard the equation history."""
-        return Eq(self.lhs, self.rhs, tag=self._tag)
+        return self.__class__(
+            self.lhs,
+            self.rhs,
+            tag=self._tag,
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+        )
 
     def copy(self):
         """Return a copy of the equation, including its history."""
-        return Eq(
+        return self.__class__(
             self._lhs,
             self._rhs,
             tag=self._tag,
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
             _prev_lhs=self._prev_lhs,
             _prev_rhs=self._prev_rhs,
             _prev_tags=self._prev_tags,
@@ -256,31 +287,70 @@ class Eq:
     def __add__(self, other):
         """Add another equation, or a constant."""
         try:
-            return Eq(lhs=(self.lhs + other.lhs), rhs=(self.rhs + other.rhs))
+            return self.__class__(
+                lhs=(self.lhs + other.lhs),
+                rhs=(self.rhs + other.rhs),
+            )
+            # we ignore instance eq_sym_str/eq_sym_tex because we don't know
+            # which equation should take precedence
         except AttributeError:
-            return Eq(lhs=(self.lhs + other), rhs=(self.rhs + other))
+            return self.__class__(
+                lhs=(self.lhs + other),
+                rhs=(self.rhs + other),
+                eq_sym_str=self.__dict__.get('eq_sym_str', None),
+                eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+            )
 
     __radd__ = __add__
 
     def __sub__(self, other):
         try:
-            return Eq(lhs=(self.lhs - other.lhs), rhs=(self.rhs - other.rhs))
+            return self.__class__(
+                lhs=(self.lhs - other.lhs), rhs=(self.rhs - other.rhs)
+            )
+            # we ignore instance eq_sym_str/eq_sym_tex because we don't know
+            # which equation should take precedence
         except AttributeError:
-            return Eq(lhs=(self.lhs - other), rhs=(self.rhs - other))
+            return self.__class__(
+                lhs=(self.lhs - other),
+                rhs=(self.rhs - other),
+                eq_sym_str=self.__dict__.get('eq_sym_str', None),
+                eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+            )
 
     def __rsub__(self, other):
         # we don't have to consier the case of `other` being an `Eq`, because
         # that would be handled by `__sub__`.
-        return Eq(lhs=(other - self.lhs), rhs=(other - self.rhs))
+        return self.__class__(
+            lhs=(other - self.lhs),
+            rhs=(other - self.rhs),
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+        )
 
     def __mul__(self, other):
-        return Eq(lhs=(self.lhs * other), rhs=(self.rhs * other))
+        return self.__class__(
+            lhs=(self.lhs * other),
+            rhs=(self.rhs * other),
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+        )
 
     def __rmul__(self, other):
-        return Eq(lhs=(other * self.lhs), rhs=(other * self.rhs))
+        return self.__class__(
+            lhs=(other * self.lhs),
+            rhs=(other * self.rhs),
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+        )
 
     def __truediv__(self, other):
-        return Eq(lhs=(self.lhs / other), rhs=(self.rhs / other))
+        return self.__class__(
+            lhs=(self.lhs / other),
+            rhs=(self.rhs / other),
+            eq_sym_str=self.__dict__.get('eq_sym_str', None),
+            eq_sym_tex=self.__dict__.get('eq_sym_tex', None),
+        )
 
     def __eq__(self, other):
         """Compare to another equation, or a constant.
@@ -332,7 +402,11 @@ class Eq:
             lhs = _rjust(lhs, len_lhs)
             rhs = _ljust(rhs, len_rhs)
             tag = _ljust(tag, len_tag)
-            lines.append((lhs + ' = ' + rhs + "    " + tag).rstrip())
+            lines.append(
+                (
+                    lhs + " " + self.eq_sym_str + " " + rhs + "    " + tag
+                ).rstrip()
+            )
         return "\n".join(lines)
 
     def __str__(self):
@@ -370,10 +444,14 @@ class Eq:
             for i, rhs in enumerate(self._prev_rhs[1:]):
                 lhs = self._prev_lhs[i + 1]
                 if lhs is None:
-                    res += "   &= %s" % self._latex_render_expr(rhs)
+                    res += "   &%s %s" % (
+                        self.eq_sym_tex,
+                        self._latex_render_expr(rhs),
+                    )
                 else:
-                    res += "  %s &= %s" % (
+                    res += "  %s &%s %s" % (
                         self._latex_render_expr(lhs),
+                        self.eq_sym_tex,
                         self._latex_render_expr(rhs),
                     )
                 if self._prev_tags[i + 1] is not None:
@@ -381,10 +459,14 @@ class Eq:
                 res += "\\\\\n"
             lhs = self._lhs
             if lhs is None:
-                res += "   &= %s\n" % self._latex_render_expr(self.rhs)
+                res += "   &%s %s\n" % (
+                    self.eq_sym_tex,
+                    self._latex_render_expr(self.rhs),
+                )
             else:
-                res += "  %s &= %s\n" % (
+                res += "  %s &%s %s\n" % (
                     self._latex_render_expr(lhs),
+                    self.eq_sym_tex,
                     self._latex_render_expr(self.rhs),
                 )
             if self._tag is not None:
@@ -392,8 +474,9 @@ class Eq:
             res += r'\end{align}' + "\n"
         else:
             res = r'\begin{equation}' + "\n"
-            res += "  %s = %s\n" % (
+            res += "  %s %s %s\n" % (
                 self._latex_render_expr(self.lhs),
+                self.eq_sym_tex,
                 self._latex_render_expr(self.rhs),
             )
             try:

@@ -108,139 +108,154 @@ Reference
 
 .. code-block:: pycon
 
-   class Eq(builtins.object)
-    |  Symbolic equation.
-    |
-    |  This class keeps track of the :attr:`lhs` and :attr:`rhs` of an equation
-    |  across arbitrary manipulations.
-    |
-    |  Args:
-    |      lhs: the left-hand-side of the equation
-    |      rhs: the right-hand-side of the equation. If None, defaults to zero.
-    |      tag: a tag (equation number) to be shown when printing
-    |           the equation
-    |
-    |  Class Attributes:
-    |      latex_renderer: If not None, a callable that must return a LaTeX
-    |          representation (:class:`str`) of `lhs` and `rhs`.
-    |
-    |  Methods defined here:
-    |
-    |  __add__(self, other)
-    |      Add another equation, or a constant.
-    |
-    |  __eq__(self, other)
-    |      Compare to another equation, or a constant.
-    |
-    |      This does not take into account any mathematical knowledge, it merely
-    |      checks if the :attr:`lhs` and :attr:`rhs` are exactly equal. If
-    |      comparing against a constant, the :attr:`rhs` must be exactly equal to
-    |      that constant.
-    |
-    |  __init__(self, lhs, rhs=None, tag=None, _prev_lhs=None, _prev_rhs=None, _prev_tags=None)
-    |      Initialize self.  See help(type(self)) for accurate signature.
-    |
-    |  __mul__(self, other)
-    |
-    |  __radd__ = __add__(self, other)
-    |
-    |  __repr__(self)
-    |      Return repr(self).
-    |
-    |  __rmul__(self, other)
-    |
-    |  __rsub__(self, other)
-    |
-    |  __str__(self)
-    |      Return str(self).
-    |
-    |  __sub__(self, other)
-    |
-    |  __truediv__(self, other)
-    |
-    |  amend(self, previous_lines=1)
-    |      Amend the previous lhs and rhs with the current ones.
-    |
-    |      If `previous_lines` is greater than 1, overwrite the corresponding
-    |      number of previous lines.
-    |
-    |      This can be chained to e.g. an :meth:`apply` call to group multiple
-    |      steps so that they don't show up a separate lines in the output.
-    |
-    |  apply(self, func_or_mtd, *args, **kwargs)
-    |      Apply `func_or_mtd` to both sides of the equation.
-    |
-    |      Returns a new equation where the left-hand-side and right-hand side
-    |      are replaced by the application of `func_or_mtd`, depending on its
-    |      type.
-    |
-    |      * If `func_or_mtd` is a string, it must be the name of a method `mtd`,
-    |        and equation is modified as
-    |
-    |        ::
-    |
-    |            lhs=lhs.mtd(*args, **kwargs)
-    |            rhs=rhs.mtd(*args, **kwargs)
-    |
-    |      * If `func_or_mtd` is a callable `func`, the equation is modified as
-    |
-    |        ::
-    |
-    |            lhs=func(lhs, *args, **kwargs)
-    |            rhs=func(rhs, *args, **kwargs)
-    |
-    |  apply_to_lhs(self, func_or_mtd, *args, **kwargs)
-    |      Apply `func_or_mtd` to the :attr:`lhs` of the equation only.
-    |
-    |      Like :meth:`apply`, but modifying only the left-hand-side.
-    |
-    |  apply_to_rhs(self, func_or_mtd, *args, **kwargs)
-    |      Apply `func_or_mtd` to the :attr:`rhs` of the equation only.
-    |
-    |      Like :meth:`apply`, but modifying only the right-hand-side.
-    |
-    |  copy(self)
-    |      Return a copy of the equation, including its history.
-    |
-    |  reset(self)
-    |      Discard the equation history.
-    |
-    |  tag(self, tag)
-    |      Set the tag for the last line in the equation.
-    |
-    |  transform(self, func, *args, **kwargs)
-    |      Apply `func` to the entire equation.
-    |
-    |      The lhs and the rhs of the equation is replaced with the lhs and rhs of
-    |      the equation returned by ``func(self, *args, **kwargs)``.
-    |
-    |  ----------------------------------------------------------------------
-    |  Data descriptors defined here:
-    |
-    |  __dict__
-    |      dictionary for instance variables (if defined)
-    |
-    |  __weakref__
-    |      list of weak references to the object (if defined)
-    |
-    |  as_dict
-    |      Mapping of the lhs to the rhs.
-    |
-    |      This allows to plug an equation into another expression.
-    |
-    |  lhs
-    |      The left-hand-side of the equation.
-    |
-    |  rhs
-    |      The right-hand-side of the equation.
-    |
-    |  ----------------------------------------------------------------------
-    |  Data and other attributes defined here:
-    |
-    |  __hash__ = None
-    |
-    |  latex_renderer = None
 
+    class Eq(builtins.object)
+     |  symbolic_equation.Eq(lhs, rhs=None, tag=None, eq_sym_str=None, eq_sym_tex=None, _prev_lhs=None, _prev_rhs=None, _prev_tags=None)
+     |
+     |  Symbolic equation.
+     |
+     |  This class keeps track of the :attr:`lhs` and :attr:`rhs` of an equation
+     |  across arbitrary manipulations.
+     |
+     |  Args:
+     |      lhs: the left-hand-side of the equation
+     |      rhs: the right-hand-side of the equation. If None, defaults to zero.
+     |      tag: a tag (equation number) to be shown when printing
+     |           the equation
+     |      eq_sym_str: If given, a value that overrides the `eq_sym_str` class
+     |          attribute for this particular instance.
+     |      eq_sym_tex: If given, a value that overrides the `eq_sym_tex` class
+     |          attribute for this particular instance.
+     |
+     |  Class Attributes:
+     |      latex_renderer: If not None, a callable that must return a LaTeX
+     |          representation (:class:`str`) of `lhs` and `rhs`. When overriding
+     |          this, wrap the function with `staticmethod`.
+     |      eq_sym_str: default representation of the "equal" when rendering the
+     |          equation as a str
+     |      eq_sym_tex: default representation of the "equal" when rendering the
+     |          equation in latex
+     |
+     |  Methods defined here:
+     |
+     |  __add__(self, other)
+     |      Add another equation, or a constant.
+     |
+     |  __eq__(self, other)
+     |      Compare to another equation, or a constant.
+     |
+     |      This does not take into account any mathematical knowledge, it merely
+     |      checks if the :attr:`lhs` and :attr:`rhs` are exactly equal. If
+     |      comparing against a constant, the :attr:`rhs` must be exactly equal to
+     |      that constant.
+     |
+     |  __init__(self, lhs, rhs=None, tag=None, eq_sym_str=None, eq_sym_tex=None, _prev_lhs=None, _prev_rhs=None, _prev_tags=None)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |
+     |  __mul__(self, other)
+     |
+     |  __radd__ = __add__(self, other)
+     |
+     |  __repr__(self)
+     |      Return repr(self).
+     |
+     |  __rmul__(self, other)
+     |
+     |  __rsub__(self, other)
+     |
+     |  __str__(self)
+     |      Return str(self).
+     |
+     |  __sub__(self, other)
+     |
+     |  __truediv__(self, other)
+     |
+     |  amend(self, previous_lines=1)
+     |      Amend the previous lhs and rhs with the current ones.
+     |
+     |      If `previous_lines` is greater than 1, overwrite the corresponding
+     |      number of previous lines.
+     |
+     |      This can be chained to e.g. an :meth:`apply` call to group multiple
+     |      steps so that they don't show up a separate lines in the output.
+     |
+     |  apply(self, func_or_mtd, *args, **kwargs)
+     |      Apply `func_or_mtd` to both sides of the equation.
+     |
+     |      Returns a new equation where the left-hand-side and right-hand side
+     |      are replaced by the application of `func_or_mtd`, depending on its
+     |      type.
+     |
+     |      * If `func_or_mtd` is a string, it must be the name of a method `mtd`,
+     |        and equation is modified as
+     |
+     |        ::
+     |
+     |            lhs=lhs.mtd(*args, **kwargs)
+     |            rhs=rhs.mtd(*args, **kwargs)
+     |
+     |      * If `func_or_mtd` is a callable `func`, the equation is modified as
+     |
+     |        ::
+     |
+     |            lhs=func(lhs, *args, **kwargs)
+     |            rhs=func(rhs, *args, **kwargs)
+     |
+     |  apply_to_lhs(self, func_or_mtd, *args, **kwargs)
+     |      Apply `func_or_mtd` to the :attr:`lhs` of the equation only.
+     |
+     |      Like :meth:`apply`, but modifying only the left-hand-side.
+     |
+     |  apply_to_rhs(self, func_or_mtd, *args, **kwargs)
+     |      Apply `func_or_mtd` to the :attr:`rhs` of the equation only.
+     |
+     |      Like :meth:`apply`, but modifying only the right-hand-side.
+     |
+     |  copy(self)
+     |      Return a copy of the equation, including its history.
+     |
+     |  reset(self)
+     |      Discard the equation history.
+     |
+     |  tag(self, tag)
+     |      Set the tag for the last line in the equation.
+     |
+     |  transform(self, func, *args, **kwargs)
+     |      Apply `func` to the entire equation.
+     |
+     |      The lhs and the rhs of the equation is replaced with the lhs and rhs of
+     |      the equation returned by ``func(self, *args, **kwargs)``.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |
+     |  as_dict
+     |      Mapping of the lhs to the rhs.
+     |
+     |      This allows to plug an equation into another expression.
+     |
+     |  lhs
+     |      The left-hand-side of the equation.
+     |
+     |  rhs
+     |      The right-hand-side of the equation.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |
+     |  __hash__ = None
+     |
+     |  eq_sym_str = '='
+     |
+     |  eq_sym_tex = '='
+     |
+     |  latex_renderer = None
 
 
 Use in the Jupyter notebook
@@ -257,6 +272,20 @@ and ``rhs``. Otherwise:
 * If the ``lhs`` or ``rhs`` object has a ``_latex`` method, that method will be
   called; or lastly,
 * The ``lhs`` and ``rhs`` will be passed to ``sympy.latex``.
+
+
+Use with QAlgebra
+-----------------
+
+To properly render equations that contain QAlgebra_ expressions, you must
+register QAlgebra's latex renderer:
+
+.. code-block:: python
+
+    from symbolic_equation import Eq
+    from qalgebra import latex
+    Eq.latex_renderer = staticmethod(latex)
+
 
 
 Relation to SymPy's Eq class
@@ -277,3 +306,4 @@ to a ``sympy.Eq`` instance via the ``sympy.sympify`` function.
 .. _Eq class: https://docs.sympy.org/latest/modules/core.html?highlight=eq#sympy.core.relational.Equality
 .. _SymPy: https://www.sympy.org/
 .. _Jupyter notebook: https://jupyter.org
+.. _QAlgebra: https://github.com/QAlgebra/qalgebra
